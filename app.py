@@ -44,18 +44,6 @@ FACE_CASCADE = cv2.CascadeClassifier(
 # ============================================================
 # VIDEO DEEPFAKE MODEL
 # ============================================================
-# This is a VIDEO model, not the previous single-image model.
-#
-# It samples 16 frames from the video and uses VideoMAE's
-# spatiotemporal representation to classify the video.
-#
-# Model:
-# Vansh180/VideoMae-ffc23-deepfake-detector
-#
-# The model card reports 88% validation accuracy on its
-# FaceForensics++ validation setup. This does NOT mean 88%
-# accuracy on every real-world video.
-# ============================================================
 
 VIDEO_MODEL_NAME = "Vansh180/VideoMae-ffc23-deepfake-detector"
 
@@ -67,7 +55,9 @@ processor = VideoMAEImageProcessor.from_pretrained(
 )
 
 video_model = VideoMAEForVideoClassification.from_pretrained(
-    VIDEO_MODEL_NAME
+    VIDEO_MODEL_NAME,
+    torch_dtype=torch.float16,
+    low_cpu_mem_usage=True
 )
 
 video_model.eval()
@@ -113,6 +103,7 @@ def analyze_faces(
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
+
         cap.release()
 
         return {
@@ -474,9 +465,19 @@ def analyze_ai(video_path):
             return_tensors="pt"
         )
 
-        outputs = video_model(
-            **inputs
-        )
+        # Use half precision to reduce memory usage.
+        inputs = {
+            key: value.half()
+            if torch.is_floating_point(value)
+            else value
+            for key, value in inputs.items()
+        }
+
+        with torch.inference_mode():
+
+            outputs = video_model(
+                **inputs
+            )
 
         probabilities = torch.softmax(
             outputs.logits,
@@ -489,7 +490,10 @@ def analyze_ai(video_path):
             for i in range(len(probabilities))
         }
 
-        print("Model labels:", labels)
+        print(
+            "Model labels:",
+            labels
+        )
 
         real_index = None
         fake_index = None
@@ -642,17 +646,20 @@ def upload():
     )
 
     print("Analyzing face...")
+
     face_results = analyze_faces(
         save_path,
         preview_path
     )
 
     print("Analyzing audio...")
+
     voice_results = analyze_voice(
         save_path
     )
 
     print("Running VIDEO deepfake model...")
+
     ai_results = analyze_ai(
         save_path
     )
@@ -672,14 +679,20 @@ def upload():
             else None
         )
     )
+
+
 # ============================================================
 # LOVABLE API UPLOAD
 # ============================================================
 
-@app.route("/api/upload", methods=["POST"])
+@app.route(
+    "/api/upload",
+    methods=["POST"]
+)
 def api_upload():
 
     if "video" not in request.files:
+
         return jsonify({
             "error": "No video was sent."
         }), 400
@@ -687,13 +700,20 @@ def api_upload():
     file = request.files["video"]
 
     if file.filename == "":
+
         return jsonify({
             "error": "No video was selected."
         }), 400
 
-    if not allowed_file(file.filename):
+    if not allowed_file(
+        file.filename
+    ):
+
         return jsonify({
-            "error": "Unsupported video format. Please upload mp4, mov, avi, or webm."
+            "error": (
+                "Unsupported video format. "
+                "Please upload mp4, mov, avi, or webm."
+            )
         }), 400
 
     save_path = os.path.join(
@@ -701,10 +721,14 @@ def api_upload():
         file.filename
     )
 
-    file.save(save_path)
+    file.save(
+        save_path
+    )
 
     preview_filename = (
-        os.path.splitext(file.filename)[0]
+        os.path.splitext(
+            file.filename
+        )[0]
         + "_face_preview.jpg"
     )
 
@@ -714,17 +738,20 @@ def api_upload():
     )
 
     print("Analyzing face...")
+
     face_results = analyze_faces(
         save_path,
         preview_path
     )
 
     print("Analyzing audio...")
+
     voice_results = analyze_voice(
         save_path
     )
 
     print("Running VIDEO deepfake model...")
+
     ai_results = analyze_ai(
         save_path
     )
@@ -743,6 +770,7 @@ def api_upload():
             else None
         )
     })
+
 
 # ============================================================
 # START SERVER
