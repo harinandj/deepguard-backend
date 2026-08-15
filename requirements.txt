@@ -1,0 +1,8 @@
+Flask==3.0.3
+opencv-python-headless==4.10.0.84
+librosa
+numpy
+torch
+transformers
+Pillow
+gunicorn

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard - Analysis Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 30px;
+            color: #172033;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 {
+            color: #123a66;
+        }
+        .card {
+            background: white;
+            padding: 24px;
+            margin: 20px 0;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+        }
+        .result {
+            font-size: 30px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .real { color: #16823b; }
+        .fake { color: #c62828; }
+        .unavailable { color: #777; }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #e8edf3;
+            padding: 10px 0;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+        .bar {
+            height: 18px;
+            background: #e5e9ef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0 16px;
+        }
+        .fill {
+            height: 100%;
+        }
+        .note {
+            background: #fff8e1;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        a {
+            color: #1557a6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>DeepGuard - AI Deepfake Detection for BFSI</h1>
+
+    {% if error %}
+        <div class="card">
+            <h2>Error</h2>
+            <p>{{ error }}</p>
+        </div>
+    {% else %}
+
+        <div class="card">
+            <h2>AI Deepfake Analysis</h2>
+
+            {% if ai_results and ai_results.available %}
+
+                <div class="result
+                    {% if ai_results.prediction == 'FAKE' %}
+                        fake
+                    {% else %}
+                        real
+                    {% endif %}">
+                    {{ ai_results.prediction }}
+                </div>
+
+                <div class="row">
+                    <span>AI confidence</span>
+                    <strong>{{ ai_results.confidence }}%</strong>
+                </div>
+
+                <h3>Fake probability</h3>
+                <div class="bar">
+                    <div class="fill"
+                         style="width: {{ ai_results.fake_score }}%; background:#c62828;">
+                    </div>
+                </div>
+                <strong>{{ ai_results.fake_score }}%</strong>
+
+                <h3>Real probability</h3>
+                <div class="bar">
+                    <div class="fill"
+                         style="width: {{ ai_results.real_score }}%; background:#16823b;">
+                    </div>
+                </div>
+                <strong>{{ ai_results.real_score }}%</strong>
+
+                <div class="note">
+                    <strong>Demo note:</strong>
+                    The AI result is produced by the selected image deepfake
+                    classification model using a representative video frame.
+                    It should be treated as a prototype/demo result, not as
+                    a final forensic determination.
+                </div>
+
+            {% else %}
+
+                <div class="result unavailable">UNAVAILABLE</div>
+                <p>{{ ai_results.error if ai_results else "AI analysis was not returned." }}</p>
+
+            {% endif %}
+        </div>
+
+        {% if face_results %}
+        <div class="card">
+            <h2>Face Detection / Consistency Analysis</h2>
+
+            {% if preview_filename %}
+                <p>Representative analyzed frame (green box = detected face):</p>
+                <img src="{{ url_for('static', filename='frames/' + preview_filename) }}"
+                     alt="Detected face">
+            {% endif %}
+
+            <div class="row">
+                <span>Frames analyzed</span>
+                <strong>{{ face_results.frames_analyzed }}</strong>
+            </div>
+
+            <div class="row">
+                <span>Frames with face</span>
+                <strong>{{ face_results.frames_with_face }}</strong>
+            </div>
+
+            <div class="row">
+                <span>Face detection ratio</span>
+                <strong>{{ face_results.face_ratio_percent }}%</strong>
+            </div>
+
+            <div class="row">
+                <span>Face detected consistently</span>
+                <strong>{{ "Yes" if face_results.consistent else "No" }}</strong>
+            </div>
+
+            <div class="note">
+                This is classic OpenCV face detection. The percentage is a
+                count-based face-presence statistic, not a machine-learning
+                authenticity score.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if voice_results %}
+        <div class="card">
+            <h2>Voice / Audio Analysis</h2>
+
+            <div class="row">
+                <span>Audio detected</span>
+                <strong>{{ "Yes" if voice_results.audio_detected else "No" }}</strong>
+            </div>
+
+            <div class="row">
+                <span>Duration</span>
+                <strong>{{ voice_results.duration }} seconds</strong>
+            </div>
+
+            <div class="row">
+                <span>Sample rate</span>
+                <strong>{{ voice_results.sample_rate }} Hz</strong>
+            </div>
+
+            <div class="row">
+                <span>RMS energy</span>
+                <strong>{{ voice_results.rms_energy }}</strong>
+            </div>
+
+            <div class="row">
+                <span>Zero-crossing rate</span>
+                <strong>{{ voice_results.zero_crossing_rate }}</strong>
+            </div>
+
+            <div class="row">
+                <span>Spectral centroid</span>
+                <strong>{{ voice_results.spectral_centroid }}</strong>
+            </div>
+
+            {% if voice_results.error %}
+                <div class="note">{{ voice_results.error }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">← Upload another video</a></p>
+
+</div>
+</body>
+</html>

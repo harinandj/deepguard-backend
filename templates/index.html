@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DeepGuard - Deepfake Detection for BFSI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">🛡 DeepGuard</div>
+        <div class="tagline">AI Deepfake Detection &mdash; Banking &amp; Financial Services</div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <h1>Video KYC Verification</h1>
+            <p class="subtext">Upload a customer verification video to begin analysis.</p>
+
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <label class="upload-box">
+                    <input type="file" name="video" accept="video/*" required>
+                    <span>Click to select a video file (mp4, mov, avi, webm)</span>
+                </label>
+                <button type="submit">Upload &amp; Analyze</button>
+            </form>
+        </div>
+
+        <div class="status-note">
+            Step 1 build: upload only. Face / voice / liveness / metadata analysis
+            and the risk engine will be added in later steps.
+        </div>
+    </main>
+</body>
+</html>
